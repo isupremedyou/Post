@@ -50,4 +50,46 @@ class PostController {
         }
         dataTask.resume()
     }
+    
+    static func addNewPostWith(username: String, text: String, completion: @escaping ([Post]?) -> Void) {
+        
+        let post = Post(username: username, text: text)
+        
+        var postData = Data()
+        
+        do {
+            let je = JSONEncoder()
+            postData = try je.encode(post)
+        } catch {
+            print("Error: \(error) || \(error.localizedDescription)")
+            completion(nil)
+            return
+        }
+        
+        guard let baseURL = baseURL else { completion(nil) ; return }
+        
+        let postEndpoint = baseURL.appendingPathExtension("json")
+        
+        var request = URLRequest(url: postEndpoint)
+        request.httpMethod = "POST"
+        request.httpBody = postData
+        
+        let dataTask = URLSession.shared.dataTask(with: request) { (data, _, error) in
+            
+            if let error = error {
+                print("Error: \(error) || \(error.localizedDescription)")
+                completion(nil)
+                return
+            } else if let data = data {
+                guard let dataString = String(bytes: data, encoding: .utf8) else { return }
+                print(dataString)
+                print("POST Successful")
+            }
+            
+            fetchPosts(completion: { (posts) in
+                completion(posts)
+            })
+        }
+        dataTask.resume()
+    }
 }
